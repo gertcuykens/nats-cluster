@@ -1,0 +1,25 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nats-bench
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      name: nats-bench
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: nats-bench
+        image: gertcuykens/nats:bench
+        imagePullPolicy: Always
+        args:
+        - bench-subject
+        volumeMounts:
+        - name: tls-volume
+          mountPath: /etc/tls
+      volumes:
+      - name: tls-volume
+        secret:
+          secretName: tls-nats-server

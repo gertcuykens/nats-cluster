@@ -1,0 +1,80 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stan
+  labels:
+    component: stan
+spec:
+  selector:
+    component: stan
+  clusterIP: None
+  ports:
+  - name: client
+    port: 4222
+  - name: cluster
+    port: 6222
+  - name: monitor
+    port: 8222
+
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: stan
+  labels:
+    component: stan
+spec:
+  serviceName: stan
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        component: stan
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: component
+                operator: In
+                values:
+                - stan
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: stan
+        image: nats-streaming:latest
+        # image: gertcuykens/nats-streaming-server:latest
+        args: [ "--config", "/etc/nats/nats.conf" ]
+        volumeMounts:
+        - name: tls-volume
+          mountPath: /etc/tls
+        - name: config-volume
+          mountPath: /etc/nats
+        - name: store-volume
+          mountPath: /store
+        ports:
+        - containerPort: 4222
+          name: client
+        - containerPort: 6222
+          name: cluster
+        - containerPort: 8222
+          name: monitor
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8222
+            scheme: HTTPS
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+      volumes:
+      - name: tls-volume
+        secret:
+          secretName: tls-nats-server
+      - name: config-volume
+        configMap:
+          name: nats-config
+      - name: store-volume
+        emptyDir:
+          medium: Memory

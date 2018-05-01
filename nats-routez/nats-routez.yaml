@@ -1,0 +1,17 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nats-routez
+spec:
+  template:
+    metadata:
+      name: nats-routez
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: nats-routez
+        image: gertcuykens/nats:routez
+        imagePullPolicy: Always
+        args:
+        - -server=https://nats:8222

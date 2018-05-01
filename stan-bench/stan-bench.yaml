@@ -1,0 +1,27 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stan-bench
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      name: stan-bench
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: stan-bench
+        image: gertcuykens/nats:stan-bench
+        imagePullPolicy: Always
+        args:
+        - -s=nats://nats_client_user:nats_client_pwd@nats:4222
+        - -tls=/etc/nats/tls
+        - bench-subject
+        volumeMounts:
+        - name: tls-volume
+          mountPath: /etc/nats/tls
+      volumes:
+      - name: tls-volume
+        secret:
+          secretName: tls-nats-server
